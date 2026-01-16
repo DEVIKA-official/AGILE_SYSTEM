@@ -1,52 +1,34 @@
-#include <Wire.h>
 #include <Keypad.h>
+#include <SoftwareSerial.h>
 
+SoftwareSerial outSerial(10, -1); // TX to Arduino 1
 
-#define I2C_ADDR 0x09
-#define BUZZER 8
-#define PIR 7
-
-
-char password[] = "1234";
-char input[5];
-int idx = 0;
-const byte rows = 4;
-const byte cols = 3;
-char keys[rows][cols] = {
-{'1','2','3'},
-{'4','5','6'},
-{'7','8','9'},
-{'*','0','#'}
+const byte ROWS = 4;
+const byte COLS = 4;
+char keys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
 };
-byte rowPins[rows] = {9,10,11,12};
-byte colPins[cols] = {A0,A1,A2};
 
+byte rowPins[ROWS] = {2,3,4,5};
+byte colPins[COLS] = {6,7,8,9};
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, rows, cols);
-
+String password = "1234";
+String input = "";
 
 void setup() {
-Wire.begin(I2C_ADDR);
-pinMode(BUZZER, OUTPUT);
-pinMode(PIR, INPUT);
+  outSerial.begin(9600);
 }
-
 
 void loop() {
-if (digitalRead(PIR)) {
-tone(BUZZER, 1000);
-delay(1000);
-noTone(BUZZER);
-}
-char key = keypad.getKey();
-if (key) {
-input[idx++] = key;
-if (idx == 4) {
-input[4] = '\0';
-if (strcmp(input, password) != 0) {
-tone(BUZZER, 2000, 3000);
-}
-idx = 0;
-}
-}
+  char key = keypad.getKey();
+  if(key) {
+    if(key == '#') {
+      if(input == password) outSerial.println("KEY_OK");
+      input = "";
+    } else input += key;
+  }
 }
